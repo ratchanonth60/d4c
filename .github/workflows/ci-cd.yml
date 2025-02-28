@@ -41,14 +41,16 @@ jobs:
         with:
           python-version: "3.9"
 
-      # ติดตั้ง Docker และ Docker Compose ด้วย action
+      # ติดตั้ง Docker และ Docker Compose ด้วย action และดาวน์โหลด binary
       - name: Set up Docker
         uses: docker/setup-buildx-action@v2
 
       - name: Install Docker Compose
         run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose-plugin
+          # ดาวน์โหลด Docker Compose ล่าสุดจาก GitHub
+          DOCKER_COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
+          sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
           docker-compose --version  # ตรวจสอบ version
 
       - name: Install dependencies
