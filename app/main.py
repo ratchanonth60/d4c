@@ -9,8 +9,10 @@ app = FastAPI()
 
 
 user = os.getenv("POSTGRES_USER", "postgresql")
-password = os.getenv("POSTGRES_PASSWORD", "password")
-endpoint = os.getenv("POSTGRES_ENDPOINT", "db")
+password = os.getenv("POSTGRES_PASSWORD", "054362770aA")
+endpoint = os.getenv(
+    "POSTGRES_ENDPOINT", "db-golang-v2.cjcc0ye241bn.ap-southeast-1.rds.amazonaws.com"
+)
 port = os.getenv("POSTGRES_PORT", "5432")
 db_name = os.getenv("POSTGRES_DB", "fastapi_db")
 postgres_url = f"postgresql://{user}:{password}@{endpoint}:{port}/{db_name}"
