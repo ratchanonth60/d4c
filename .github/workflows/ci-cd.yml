@@ -100,6 +100,3 @@ jobs:
 
       - name: Deploy to EKS
         run: make deploy ENV=${{ env.DEPLOY_ENV }}
-
-      - name: Check Deployment Status
-        run: make status ENV=${{ env.DEPLOY_ENV }}
