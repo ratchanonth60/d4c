@@ -12,7 +12,7 @@ all: test build push deploy
 
 # รัน unit test
 test:
-	cd app && pytest tests/
+	cd app && pytest
 
 # Build Docker image
 build:
