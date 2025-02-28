@@ -41,6 +41,12 @@ jobs:
         with:
           python-version: "3.9"
 
+      # เพิ่ม step ติดตั้ง docker-compose
+      - name: Install Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/2.23.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
@@ -52,7 +58,7 @@ jobs:
 
   # Stage 2: Build and Push
   build:
-    needs: unit-test # รันต่อเมื่อ unit-test ผ่าน
+    needs: unit-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -76,9 +82,9 @@ jobs:
 
   # Stage 3: Deploy
   deploy:
-    needs: build # รันต่อเมื่อ build ผ่าน
+    needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' # Deploy เฉพาะ push ไม่ใช่ PR
+    if: github.event_name == 'push'
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
