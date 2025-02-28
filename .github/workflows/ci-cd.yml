@@ -74,7 +74,7 @@ jobs:
         run: make build
 
       - name: Push Docker Image to ECR
-        run: make push ECR_REPO=${{ env.ECR_REPOSITORY }} REGION=${{ env.AWS_REGION }}
+        run: make push
 
   # Stage 3: Deploy
   deploy:
