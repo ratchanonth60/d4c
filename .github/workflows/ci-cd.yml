@@ -93,7 +93,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Configure kubectl
-        uses: aws-actions/amazon-eks-kubectl@v1
+        uses: azure/setup-kubectl@v3
         with:
           cluster-name: ${{ env.EKS_CLUSTER_NAME }}
           aws-region: ${{ env.AWS_REGION }}
