@@ -1,4 +1,14 @@
 fastapi
 uvicorn
 pytest
+databases[postgresql]
+psycopg2-binary
+sqlalchemy
 httpx
+anyio
+pytest-asyncio
+pytest-tornasync
+pytest-trio
+pytest-twisted
+twisted
+SQLModel

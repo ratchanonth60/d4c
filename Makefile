@@ -10,13 +10,15 @@ ENV ?= dev
 
 all: test build push deploy
 
-# รัน unit test
+# รัน unit test ใน Docker
 test:
-	cd app && pytest
+	docker-compose up -d
+	docker-compose exec app pytest /app/tests/
+	docker-compose down
 
 # Build Docker image
 build:
-	docker build --platform linux/amd64 -t $(APP_NAME):latest ./app
+	docker build --platform linux/amd64 -t $(APP_NAME):latest .
 
 # Push image ไป ECR
 push: ecr-login
@@ -41,4 +43,16 @@ ecr-login:
 
 # ตรวจสอบสถานะ
 status:
-	kubectl get pods -n fastapi-$(ENV)eksctl scale nodegroup --cluster $(CLUSTER_NAME) --name fastapi-nodes-small --nodes 2 --region $(REGION)
+	kubectl get pods -n fastapi-$(ENV)
+
+# รัน docker-compose
+compose-up:
+	docker-compose up -d --build
+
+# ปิด docker-compose
+compose-down:
+	docker-compose down
+
+# รัน test ใน compose
+compose-test:
+	docker-compose exec app pytest /app/tests/

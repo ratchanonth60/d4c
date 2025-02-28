@@ -1,4 +1,4 @@
-name: FastAPI CI/CD
+name: FastAPI CI/CD with PostgreSQL
 
 on:
   push:
@@ -9,15 +9,29 @@ on:
       - main
 
 env:
-  AWS_REGION: ap-southeast-1
-  ECR_REPOSITORY: fastapi-eks
-  EKS_CLUSTER_NAME: fastapi-cluster
-  DEPLOY_ENV: dev
+  AWS_REGION: ap-southeast-1 # เปลี่ยนเป็น region ของคุณ
+  ECR_REPOSITORY: fastapi-eks # ชื่อ ECR repository
+  EKS_CLUSTER_NAME: fastapi-cluster # ชื่อ EKS cluster
+  DEPLOY_ENV: dev # Environment (dev/prod)
 
 jobs:
   # Stage 1: Unit Test
   unit-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: fastapi_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -33,10 +47,12 @@ jobs:
 
       - name: Run Unit Tests
         run: make test
+        env:
+          DATABASE_URL: postgresql://user:password@localhost:5432/fastapi_db
 
   # Stage 2: Build and Push
   build:
-    needs: unit-test
+    needs: unit-test # รันต่อเมื่อ unit-test ผ่าน
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -60,9 +76,9 @@ jobs:
 
   # Stage 3: Deploy
   deploy:
-    needs: build
+    needs: build # รันต่อเมื่อ build ผ่าน
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' # Deploy เฉพาะ push ไม่ใช่ PR
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
