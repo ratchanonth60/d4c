@@ -27,7 +27,7 @@ push:
 
 # Deploy ไป Kubernetes
 deploy:
-	kubectl apply -k kubernetes/overlays/$(ENV)/
+	kubectl apply -k k8s/overlays/$(ENV)/
 
 # ดู logs
 logs:
