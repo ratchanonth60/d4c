@@ -21,7 +21,7 @@ build:
 	docker build --platform linux/amd64 -t $(APP_NAME):latest .
 
 # Push image ไป ECR
-push: ecr-login
+push: 
 	docker tag $(APP_NAME):latest $(ECR_REPO):latest
 	docker push $(ECR_REPO):latest
 
