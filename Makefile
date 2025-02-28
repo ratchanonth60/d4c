@@ -13,7 +13,7 @@ all: test build push deploy
 # รัน unit test ใน Docker
 test:
 	docker-compose up -d
-	docker-compose exec app pytest /app/tests/
+	docker-compose exec app pytest 
 	docker-compose down
 
 # Build Docker image
