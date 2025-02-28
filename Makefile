@@ -22,7 +22,7 @@ push:
 	docker push $(ECR_REPO):latest
 
 update-image:
-	kustomize edit set image $(APP_NAME)=$(ECR_REPO):latest -f k8s/overlays/$(ENV)/
+	kustomize edit set image $(APP_NAME)=$(ECR_REPO):latest k8s/overlays/$(ENV)/
 
 deploy:
 	kubectl create namespace $(NAMESPACE) --dry-run=client -o yaml | kubectl apply -f -
