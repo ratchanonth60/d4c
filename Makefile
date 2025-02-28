@@ -6,11 +6,15 @@ CLUSTER_NAME ?= fastapi-cluster
 ENV ?= dev
 
 # คำสั่งหลัก
-.PHONY: all build push deploy logs clean
+.PHONY: all test build push deploy logs clean status ecr-login
 
-all: build push deploy
+all: test build push deploy
 
-# Build Docker image สำหรับ amd64
+# รัน unit test
+test:
+	cd app && pytest tests/
+
+# Build Docker image
 build:
 	docker build --platform linux/amd64 -t $(APP_NAME):latest ./app
 
@@ -19,15 +23,15 @@ push: ecr-login
 	docker tag $(APP_NAME):latest $(ECR_REPO):latest
 	docker push $(ECR_REPO):latest
 
-# Deploy ไป Kubernetes ด้วย Kustomize
+# Deploy ไป Kubernetes
 deploy:
 	kubectl apply -k kubernetes/overlays/$(ENV)/
 
-# ดู logs ของ pod
+# ดู logs
 logs:
 	kubectl logs -l app=fastapi -n fastapi-$(ENV)
 
-# ล้างทรัพยากร Kubernetes
+# ล้างทรัพยากร
 clean:
 	kubectl delete -k kubernetes/overlays/$(ENV)/
 
@@ -35,10 +39,6 @@ clean:
 ecr-login:
 	aws ecr get-login-password --region $(REGION) | docker login --username AWS --password-stdin $(ECR_REPO)
 
-# ตรวจสอบสถานะ pod
+# ตรวจสอบสถานะ
 status:
-	kubectl get pods -n fastapi-$(ENV)
-
-# Scale node group
-scale-nodes:
-	eksctl scale nodegroup --cluster $(CLUSTER_NAME) --name fastapi-nodes-small --nodes 2 --region $(REGION)
+	kubectl get pods -n fastapi-$(ENV)eksctl scale nodegroup --cluster $(CLUSTER_NAME) --name fastapi-nodes-small --nodes 2 --region $(REGION)

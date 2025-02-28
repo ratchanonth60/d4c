@@ -1,0 +1,87 @@
+name: FastAPI CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  AWS_REGION: ap-southeast-1
+  ECR_REPOSITORY: fastapi-eks
+  EKS_CLUSTER_NAME: fastapi-cluster
+  DEPLOY_ENV: dev
+
+jobs:
+  # Stage 1: Unit Test
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Unit Tests
+        run: make test
+
+  # Stage 2: Build and Push
+  build:
+    needs: unit-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker Image
+        run: make build
+
+      - name: Push Docker Image to ECR
+        run: make push ECR_REPO=${{ env.ECR_REPOSITORY }} REGION=${{ env.AWS_REGION }}
+
+  # Stage 3: Deploy
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configure kubectl
+        uses: aws-actions/amazon-eks-kubectl@v1
+        with:
+          cluster-name: ${{ env.EKS_CLUSTER_NAME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to EKS
+        run: make deploy ENV=${{ env.DEPLOY_ENV }}
+
+      - name: Check Deployment Status
+        run: make status ENV=${{ env.DEPLOY_ENV }}
