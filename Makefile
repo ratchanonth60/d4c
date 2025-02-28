@@ -1,7 +1,7 @@
 # ตัวแปรเริ่มต้น
 APP_NAME ?= fastapi-eks
-ECR_REPO ?= <your-aws-account-id>.dkr.ecr.<your-region>.amazonaws.com/$(APP_NAME)
-REGION ?= <your-region>
+ECR_REPO ?= 361769569278.dkr.ecr.ap-southeast-1.amazonaws.com/$(APP_NAME)
+REGION ?= ap-southeast-1
 CLUSTER_NAME ?= fastapi-cluster
 ENV ?= dev
 
