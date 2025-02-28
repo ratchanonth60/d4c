@@ -9,74 +9,60 @@ on:
       - main
 
 env:
-  AWS_REGION: ap-southeast-1 # เปลี่ยนเป็น region ของคุณ
-  ECR_REPOSITORY: fastapi-eks # ชื่อ ECR repository
-  EKS_CLUSTER_NAME: fastapi-cluster # ชื่อ EKS cluster
-  DEPLOY_ENV: dev # Environment (dev/prod)
+  AWS_REGION: ap-southeast-1
+  ECR_REPOSITORY: fastapi-eks
+  EKS_CLUSTER_NAME: fastapi-cluster
+  DEPLOY_ENV: dev
+  NAMESPACE: fastapi-dev
 
 jobs:
-  # Stage 1: Unit Test
   unit-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-
-      # ติดตั้ง Docker และ Docker Compose ด้วย action และดาวน์โหลด binary
       - name: Set up Docker
         uses: docker/setup-buildx-action@v2
-
       - name: Install Docker Compose
         run: |
-          # ดาวน์โหลด Docker Compose ล่าสุดจาก GitHub
           DOCKER_COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
           sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
-          docker-compose --version  # ตรวจสอบ version
-
+          docker-compose --version
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-
       - name: Run Unit Tests
         run: make test
         env:
           DATABASE_URL: postgresql://user:password@localhost:5432/fastapi_db
 
-  # Stage 2: Build and Push
   build:
     needs: unit-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-
       - name: Build Docker Image
         run: make build
-
       - name: Push Docker Image to ECR
         run: make push
 
-  # Stage 3: Deploy
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -84,19 +70,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Configure kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          cluster-name: ${{ env.EKS_CLUSTER_NAME }}
-          aws-region: ${{ env.AWS_REGION }}
-
+      - name: Update kubeconfig for EKS
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+      - name: Install Kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+      - name: Update Image in Kustomize
+        run: make update-image ENV=${{ env.DEPLOY_ENV }}
       - name: Deploy to EKS
         run: make deploy ENV=${{ env.DEPLOY_ENV }}

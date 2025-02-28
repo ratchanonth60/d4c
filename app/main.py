@@ -7,12 +7,15 @@ import databases
 # กำหนด FastAPI app
 app = FastAPI()
 
-# ใช้ PostgreSQL
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql://user:password@db:5432/fastapi_db"
-)
-database = databases.Database(DATABASE_URL)
-engine = create_engine(DATABASE_URL, echo=True)  # echo=True เพื่อ debug SQL
+
+user = os.getenv("POSTGRES_USER", "postgresql")
+password = os.getenv("POSTGRES_PASSWORD", "password")
+endpoint = os.getenv("POSTGRES_ENDPOINT", "db")
+port = os.getenv("POSTGRES_PORT", "5432")
+db_name = os.getenv("POSTGRES_DB", "fastapi_db")
+postgres_url = f"postgresql://{user}:{password}@{endpoint}:{port}/{db_name}"
+database = databases.Database(postgres_url)
+engine = create_engine(postgres_url, echo=True)  # echo=True เพื่อ debug SQL
 
 
 # กำหนด model Hero

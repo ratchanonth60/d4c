@@ -1,7 +1,16 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: fastapi-dev
-bases:
+resources:
   - ../../base
-patchesStrategicMerge:
-  - patch-deployment.yml
+  - namespace.yaml
+secretGenerator:
+  - name: fastapi-secrets
+    literals:
+      - POSTGRES_HOST=db-golang-v2.cjcc0ye241bn.ap-southeast-1.rds.amazonaws.com
+      - POSTGRES_PASSWORD=054362770aA
+    behavior: create
+images:
+  - name: fastapi-eks
+    newName: 361769569278.dkr.ecr.ap-southeast-1.amazonaws.com/fastapi-eks
+    newTag: latest
