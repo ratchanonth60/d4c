@@ -87,5 +87,12 @@ jobs:
         run: |
           aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
 
+      - name: Create secrets.env for Kustomize
+        shell: bash
+        run: |
+          set +x
+          echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" > k8s/overlays/${{ env.DEPLOY_ENV }}/secrets.env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> k8s/overlays/${{ env.DEPLOY_ENV }}/secrets.env
+          set -x
       - name: Deploy to EKS
         run: make deploy

@@ -6,3 +6,4 @@ __pycache__
 pgdata/
 
 .env
+k8s/overlays/dev/secrets.env

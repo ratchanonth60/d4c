@@ -6,9 +6,8 @@ resources:
   - namespace.yaml
 secretGenerator:
   - name: fastapi-secrets
-    literals:
-      - POSTGRES_HOST=db-golang-v2.cjcc0ye241bn.ap-southeast-1.rds.amazonaws.com
-      - POSTGRES_PASSWORD=054362770aA
+    envs:
+      - secrets.env
     behavior: create
 images:
   - name: fastapi-eks
