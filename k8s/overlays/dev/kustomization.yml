@@ -4,6 +4,7 @@ namespace: fastapi-dev
 resources:
   - ../../base
   - namespace.yaml
+  - service-account.yaml
 secretGenerator:
   - name: fastapi-secrets
     envs:

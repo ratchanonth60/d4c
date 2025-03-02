@@ -12,15 +12,13 @@ spec:
       labels:
         app: fastapi
     spec:
+      serviceAccountName: fastapi-sa
       containers:
         - name: fastapi
-          image: fastapi-eks:latest
+          image: 361769569278.dkr.ecr.ap-southeast-1.amazonaws.com/fastapi-eks:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
-          envFrom:
-            - secretRef:
-                name: fastapi-secrets # Matches the secretGenerator name
           env:
             - name: POSTGRES_USER
               value: "postgres"
@@ -28,3 +26,12 @@ spec:
               value: "5432"
             - name: POSTGRES_DB
               value: "dev"
+            - name: S3_BUCKET_NAME
+              value: "cms-fastapi-bucket"
+          volumeMounts:
+            - name: s3-storage
+              mountPath: /mnt/s3
+      volumes:
+        - name: s3-storage
+          persistentVolumeClaim:
+            claimName: s3-pvc

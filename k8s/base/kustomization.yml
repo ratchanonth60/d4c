@@ -3,3 +3,6 @@ kind: Kustomization
 resources:
   - deployment.yml
   - service.yml
+  - persistent-volume.yml
+  - persistent-volume-claim.yml
+  - storage-class.yml

@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: fastapi-service
+
 spec:
   type: LoadBalancer # ใช้ LoadBalancer เพื่อให้เข้าถึงจากภายนอก
   selector:
@@ -10,3 +11,4 @@ spec:
     - protocol: TCP
       port: 80 # port ที่เปิดให้โลกภายนอก
       targetPort: 8000 # port ที่ FastAPI รัน
+

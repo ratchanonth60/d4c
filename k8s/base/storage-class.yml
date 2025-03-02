@@ -1,0 +1,6 @@
+# k8s/base/storage-class.yml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: s3-storage
+provisioner: s3.csi.aws.com
