@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: d4c-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: d4c-app
+  template:
+    metadata:
+      labels:
+        app: d4c-app
+    spec:
+      imagePullSecrets:
+        - name: fast-api-secret
+      containers:
+        - name: d4c-app
+          image: 376129844528.dkr.ecr.ap-southeast-1.amazonaws.com/fast-api:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: db-user
+          volumeMounts:
+            - mountPath: "mnt/s3"
+              name: s3-storage
+      volumes:
+        - name: s3-storage
+          persistentVolumeClaim:
+            claimName: s3-claim

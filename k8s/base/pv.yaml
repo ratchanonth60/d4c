@@ -4,13 +4,13 @@ metadata:
   name: s3-pv
 spec:
   capacity:
-    storage: 1Gi
+    storage: 5Gi
   accessModes:
     - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: s3-storage
+  mountOptions:
+    - allow-delete
   csi:
     driver: s3.csi.aws.com
-    volumeHandle: cms-fastapi-bucket
+    volumeHandle: s3-csi-driver-volume
     volumeAttributes:
-      bucketName: cms-fastapi-bucket
+      bucketName: d4c-s3-storage

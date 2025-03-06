@@ -1,4 +1,4 @@
-fastapi
+fastapi[standard]
 uvicorn
 pytest
 databases[postgresql]
@@ -12,3 +12,6 @@ pytest-trio
 pytest-twisted
 twisted
 SQLModel
+passlib
+pyjwt
+debugpy

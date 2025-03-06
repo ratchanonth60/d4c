@@ -7,3 +7,5 @@ pgdata/
 
 .env
 k8s/overlays/dev/secrets.env
+.harlequin.toml
+.cluster.yaml

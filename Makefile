@@ -9,11 +9,6 @@ NAMESPACE ?= fastapi-$(ENV)
 
 all: test build push update-image deploy
 
-test:
-	docker-compose up -d
-	docker-compose exec app pytest 
-	docker-compose down
-
 build:
 	docker build --platform linux/amd64 -t $(APP_NAME):latest .
 
@@ -25,9 +20,7 @@ update-image:
 	kustomize edit set image $(APP_NAME)=$(ECR_REPO):latest k8s/overlays/$(ENV)/
 
 deploy:
-	kubectl create namespace $(NAMESPACE) --dry-run=client -o yaml | kubectl apply -f -
 	kubectl apply -k k8s/overlays/$(ENV)/
-	kubectl rollout restart deployment/fastapi-dev -n $(NAMESPACE)
 
 logs:
 	kubectl logs -l app=fastapi -n $(NAMESPACE)
@@ -42,11 +35,19 @@ ecr-login:
 status:
 	kubectl get pods -n $(NAMESPACE)
 
-compose-up:
-	docker-compose up -d --build
+up:
+	docker-compose up -d --build $(target)
 
-compose-down:
+down:
 	docker-compose down
 
-compose-test:
+test:
+	docker-compose up -d
 	docker-compose exec app pytest 
+	docker-compose down
+
+log:
+	docker-compose logs -f $(target)
+
+ssh:
+	docker-compose exec app bash
