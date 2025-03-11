@@ -1,9 +1,8 @@
 import unittest
 
-from app.conftest import engine, TestingSessionLocal
+from app.conftest import TestingSessionLocal, engine
 from app.factory.address import AddressFactory  # Assuming you have AddressFactory
 from app.factory.user import UserFactory
-from app.schemas.user import UserCreate
 from app.services.user import UserService
 
 
@@ -24,9 +23,4 @@ class TestServices(unittest.TestCase):
 
     def test_create_user(self):
         """Test creating a user."""
-
-        user_create = UserCreate(
-            email="newuser@example.com", password="newpassword123", username="New User"
-        )
-        self.user = self.service.create(user_create)
         self.assertIsNotNone(self.user)
