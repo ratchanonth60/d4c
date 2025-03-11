@@ -12,7 +12,7 @@ from app.schemas.auth import (
 from app.schemas.base import Successfully
 from app.services.auth import AuthService
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 def get_auth_service(db: Session = Depends(get_db)) -> AuthService:

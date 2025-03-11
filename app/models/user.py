@@ -31,7 +31,6 @@ class User(BaseModel):
 
     last_login = Column(DateTime(timezone=True), nullable=True)
 
-    addresses = relationship("Address", back_populates="user")
 
     # # ความสัมพันธ์กับตารางอื่น
     # orders = relationship("Order", back_populates="user")  # ความสัมพันธ์กับคำสั่งซื้อ

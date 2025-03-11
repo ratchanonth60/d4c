@@ -7,7 +7,7 @@ from app.schemas.base import Failed, Successfully
 from app.schemas.user import UserResponse, UserUpdate
 from app.services.user import UserService
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="/users", tags=["Users"])
 
 
 def get_current_user(request: Request) -> User:

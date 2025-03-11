@@ -1,4 +1,3 @@
-# app/api/v1/address.py
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
@@ -9,7 +8,7 @@ from app.schemas.address import AddressCreate, AddressResponse, AddressUpdate
 from app.schemas.base import Failed, Successfully
 from app.services.address import AddressService
 
-router = APIRouter(prefix="/addresses", tags=["addresses"])
+router = APIRouter(prefix="/addresses", tags=["Addresses"])
 
 
 def get_current_user(request: Request) -> User:
