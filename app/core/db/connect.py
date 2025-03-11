@@ -1,4 +1,6 @@
-from sqlalchemy import Column, DateTime, create_engine
+from typing import Generator
+
+from sqlalchemy import Column, DateTime, Engine, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
@@ -6,10 +8,10 @@ from sqlalchemy.sql import func
 from app.settings.db import DATABASES
 
 
-def get_database_url():
+def get_database_url(is_test=False):
     db_config = DATABASES["default"]
     engine = db_config["ENGINE"].lower()
-    name = db_config["NAME"]
+    name = db_config["NAME"] if not is_test else "test_db"
     user = db_config.get("USER")
     password = db_config.get("PASSWORD")
     host = db_config.get("HOST", "localhost")
@@ -27,14 +29,17 @@ def get_database_url():
 
 # สร้างการเชื่อมต่อ
 DATABASE_URL = get_database_url()
-print(DATABASE_URL)
-engine = create_engine(DATABASE_URL, echo=True)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+_engine = create_engine(DATABASE_URL, echo=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
 Base = declarative_base()
 
 
+def get_engine() -> Engine:
+    return _engine
+
+
 # Dependency สำหรับ FastAPI
-def get_db():
+def get_db() -> Generator:
     db = SessionLocal()
     try:
         yield db

@@ -12,21 +12,26 @@ services:
     depends_on:
       - db
     volumes:
-      - ./app:/app
+      - ./app:/fast-api/app
 
-  # app-deploy:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   command: fastapi run --workers 4 main.py
-  #   ports:
-  #     - "8000:8000"
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - db
-  #   volumes:
-  #     - ./app:/app
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A worker.celery worker --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - db
+    volumes:
+      - ./app:/fast-api/app
+  redis:
+    image: "bitnami/redis:latest"
+    container_name: redis
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - "6379:6379"
   db:
     image: postgres:17
     env_file:
@@ -35,6 +40,5 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data # เก็บข้อมูล DB
-
 volumes:
   pgdata:

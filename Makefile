@@ -51,3 +51,6 @@ log:
 
 ssh:
 	docker-compose exec app bash
+
+restart:
+	docker-compose restart $(target)

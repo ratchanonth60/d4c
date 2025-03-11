@@ -1,81 +1,83 @@
-from fastapi import APIRouter, Depends
-import jwt
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, BackgroundTasks, Depends
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
 
-
-from app.core.auth_handler import sign_jwt, sign_refresh_token, decode_jwt
 from app.core.db.connect import get_db
-from app.core.security import get_password_hash
-from app.models.user import User
 from app.schemas.auth import (
-    JWTBearer,
-    UserCreate,
-    UserResponse,
+    ConfirmPasswordRequest,
     RefreshTokenRequest,
+    ResetPasswordRequest,
+    UserCreate,
 )
-from app.schemas.base import Failed, Successfully
+from app.schemas.base import Successfully
+from app.services.auth import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
+    return AuthService(db)
 
 
 @router.post("/login")
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
+    auth_service: AuthService = Depends(get_auth_service),
 ):
-    user = db.query(User).filter(User.username == form_data.username).first()
-    print(user)
-    if not user or not user.verify_password(form_data.password):
-        return Failed(status="fail", code=404, msg="Invalid username or password")
-    user.update_last_login()
-    db.commit()
-    id = str(user.id)
-    access_token, refresh_token = sign_jwt(id), sign_refresh_token(id)
-    jwt_token = JWTBearer(
-        access_token=access_token, refresh_token=refresh_token, token_type="bearer"
-    )
+    jwt_token = auth_service.login(form_data.username, form_data.password)
     return Successfully(
         code=200, msg="Login successfully", data=jwt_token, status="success"
     )
 
 
-@router.post("/register", response_model=UserResponse)
-async def register(user: UserCreate, db: Session = Depends(get_db)):
-    existing_user = (
-        db.query(User)
-        .filter((User.username == user.username) | (User.email == user.email))
-        .first()
-    )
-
-    if existing_user:
-        return Failed(status="fail", code=400, msg="Username or email already exists")
-    hashed_password = get_password_hash(user.password)
-
-    new_user = User(
-        username=user.username, email=user.email, hashed_password=hashed_password
-    )
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    return Successfully(status="fail", code=201, msg="User created", data=user)
+@router.post("/register")
+async def register(
+    user: UserCreate,
+    background_tasks: BackgroundTasks,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    new_user = auth_service.register(user, background_tasks)
+    return Successfully(status="success", code=201, msg="User created", data=new_user)
 
 
 @router.post("/refresh")
-def refresh_token(refresh_token_request: RefreshTokenRequest):
-    try:
-        payload = decode_jwt(refresh_token_request.refresh_token)
-        user_id = payload.get("id")
-        if not user_id:
-            return Failed(status="fail", code=401, msg="Invalid refresh token")
-        new_access_token = sign_jwt(user_id)
+def refresh_token(
+    refresh_token_request: RefreshTokenRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    new_access_token = auth_service.refresh_token(refresh_token_request)
+    return Successfully(
+        status="success", code=200, msg="Refresh token", data=new_access_token
+    )
 
-        return Successfully(
-            status="success", code=200, msg="Refresh token", data=new_access_token
-        )
-    except jwt.ExpiredSignatureError:
-        return Failed(status="fail", code=401, msg="Refresh token is expired")
-    except jwt.PyJWKError:
-        return Failed(status="fail", code=401, msg="Invalid refresh token")
+
+@router.post("/reset-password-request")
+def reset_password_request(
+    email: str,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    reset_token = auth_service.reset_password_request(email)
+    return Successfully(
+        code=200,
+        msg="Reset password token sent",
+        data=reset_token,
+        status="success",
+    )
+
+
+@router.post("/reset-password")
+def reset_password(
+    request: ResetPasswordRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    auth_service.reset_password(request)
+    return Successfully(code=200, msg="Password reset successfully", status="success")
+
+
+@router.post("/confirm-password")
+def confirm_password(
+    request: ConfirmPasswordRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    auth_service.confirm_password(request)
+    return Successfully(code=200, msg="Password updated successfully", status="success")

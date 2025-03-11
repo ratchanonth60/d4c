@@ -11,6 +11,17 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
 
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+class ConfirmPasswordRequest(BaseModel):
+    username: str
+    old_password: str
+    new_password: str
+
+
 class UserLogin(BaseModel):
     username: str
     password: str

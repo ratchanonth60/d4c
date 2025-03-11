@@ -15,3 +15,10 @@ SQLModel
 passlib
 pyjwt
 debugpy
+celery
+botocore
+boto3
+redis
+celery[sqs]
+factory_boy
+faker

@@ -1,39 +1,43 @@
-from fastapi import Request, Response
+from fastapi import Request
 from fastapi.security.utils import get_authorization_scheme_param
-from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import JSONResponse
 
+from app.core.auth_handler import decode_jwt
 from app.core.db.connect import SessionLocal
+from app.core.exceptions import AuthenticationError
 from app.models.user import User
-
-from .auth_handler import decode_jwt
 
 
 class JWTMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next) -> Response:
-        request.state.user = None  # ตั้งค่าเริ่มต้นให้ user เป็น None
+    """Middleware to authenticate requests using JWT and attach user to request state."""
+
+    async def dispatch(self, request: Request, call_next):
+        """Process the request and attach authenticated user to request.state."""
+        request.state.user = None  # Default to no user
 
         auth_header = request.headers.get("Authorization")
         if auth_header:
             scheme, token = get_authorization_scheme_param(auth_header)
             if scheme.lower() == "bearer":
-                payload = decode_jwt(token)
-                if payload:
-                    db: Session = SessionLocal()
-                    user = (
-                        db.query(User)
-                        .filter(User.username == payload.get("sub"))
-                        .first()
-                    )
-                    db.close()
+                with SessionLocal() as db:
+                    try:
+                        payload = decode_jwt(token)
+                        if not payload:
+                            raise AuthenticationError("Invalid token", status_code=401)
 
-                    if user:
+                        username = payload.get("sub")
+                        if not username:
+                            raise AuthenticationError(
+                                "Invalid token payload", status_code=401
+                            )
+
+                        user = db.query(User).filter(User.username == username).first()
+                        if not user:
+                            raise AuthenticationError("User not found", status_code=403)
+
                         request.state.user = user
-                    else:
-                        return JSONResponse(
-                            status_code=403, content={"detail": "User not found"}
-                        )
+                    except AuthenticationError as e:
+                        raise e
 
         response = await call_next(request)
         return response

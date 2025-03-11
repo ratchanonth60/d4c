@@ -1,43 +1,50 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.exceptions import RequestValidationError
-from fastapi.middleware.cors import CORSMiddleware
+import logging
 
-from app.schemas.base import Failed
+from fastapi import FastAPI
 
-from .api.v1 import auth
-from .core.auth import JWTMiddleware
-from .core.db.connect import Base, engine
-from .core.middleware import log_request_middleware
-from .settings.base import ALLOW_ORIGINS
-
-Base.metadata.create_all(bind=engine)
-
-
-app = FastAPI()
-
-app.include_router(auth.router, prefix="/v1")
-app.middleware("http")(log_request_middleware)
-
-app.add_middleware(JWTMiddleware)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOW_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+from app.api.v1.auth import router as auth_router
+from app.api.v1.users import router as users_router
+from app.api.v1.address import router as address_router
+from app.core.config import (
+    configure_app,
+    configure_exception_handlers,
+    configure_middleware,
 )
+from app.core.db.connect import Base, get_engine
+
+logger = logging.getLogger(__name__)
 
 
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(_, exc):
-    return Failed(status="fail", code=exc.status_code, msg=str(exc.errors()[0]["msg"]))
+def create_app(db_engine=None) -> FastAPI:
+    """Factory function to create and configure the FastAPI app."""
+    app = FastAPI(
+        title="E-commerce API",
+        description="API for an e-commerce platform",
+        version="1.0.0",
+    )
+    engine = db_engine if db_engine is not None else get_engine()
+
+    @app.on_event("startup")
+    async def startup_event():
+        Base.metadata.create_all(bind=engine)
+        logger.info("Application started and database initialized")
+
+    @app.on_event("shutdown")
+    async def shutdown_event():
+        logger.info("Application shutting down")
+
+    configure_app(app)
+    configure_middleware(app)
+    configure_exception_handlers(app)
+    app.include_router(auth_router, prefix="/v1")
+    app.include_router(users_router, prefix="/v1")
+    app.include_router(address_router, prefix="/v1")  # Add this line
+
+    @app.get("/")
+    def read_root():
+        return {"message": "Welcome to E-commerce API"}
+
+    return app
 
 
-@app.exception_handler(HTTPException)
-async def http_exception_handler(_, exc):
-    return Failed(status="fail", code=exc.status_code, msg=str(exc.detail))
-
-
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to E-commerce API"}
+app = create_app()

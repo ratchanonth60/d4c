@@ -1,64 +1,57 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel
 
 from app.models.user import UserRole
 
 
-# Schema พื้นฐาน
 class UserBase(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50)
-    email: EmailStr
+    username: str
+    email: Optional[str] = None
 
 
-# Schema สำหรับสร้างผู้ใช้ใหม่
-class UserCreate(UserBase):
-    password: str = Field(..., min_length=8)
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    phone_number: Optional[str] = None
-
-    @validator("password")
-    def password_strength(cls, v):
-        if not any(c.isupper() for c in v) or not any(c.isdigit() for c in v):
-            raise ValueError(
-                "Password must contain at least one uppercase letter and one number"
-            )
-        return v
-
-
-# Schema สำหรับอัปเดตข้อมูลผู้ใช้
-class UserUpdate(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    phone_number: Optional[str] = None
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    postal_code: Optional[str] = None
-    country: Optional[str] = None
-
-
-# Schema สำหรับแสดงข้อมูลผู้ใช้
 class User(UserBase):
     id: int
-    first_name: Optional[str]
-    last_name: Optional[str]
-    phone_number: Optional[str]
-    address_line1: Optional[str]
-    address_line2: Optional[str]
-    city: Optional[str]
-    state: Optional[str]
-    postal_code: Optional[str]
-    country: Optional[str]
+    hashed_password: str
+    is_active: bool = True
+    is_verified: bool = False
+    last_login: Optional[datetime] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "last_login": self.last_login.isoformat() if self.last_login else None,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    class Config:
+        from_attributes = True
+
+
+class UserCreate(UserBase):
+    password: str
+
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    role: Optional[UserRole] = None
+    is_active: Optional[bool] = None
+    is_verified: Optional[bool] = None
+
+
+class UserResponse(UserBase):
+    id: int
     role: UserRole
     is_active: bool
     is_verified: bool
-    created_at: datetime
-    updated_at: Optional[datetime]
-    last_login: Optional[datetime]
 
     class Config:
-        orm_mode = True  # อนุญาตให้แปลงจาก SQLAlchemy object
+        orm_mode = True

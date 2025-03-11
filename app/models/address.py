@@ -1,6 +1,7 @@
 import enum
-from sqlalchemy import  Column, Enum, String
-from sqlalchemy.orm import relationship 
+
+from sqlalchemy import Column, Enum, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
 
 from app.core.db.connect import BaseModel
 
@@ -10,8 +11,9 @@ class Tile(str, enum.Enum):
     MRS = "MRS"
 
 
-class Adress(BaseModel):
+class Address(BaseModel):
     __tablename__ = "address"
+    id = Column(Integer, primary_key=True, index=True)
     title = Column(Enum(Tile), nullable=False)
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
@@ -22,7 +24,8 @@ class Adress(BaseModel):
     state = Column(String, nullable=True)
     postal_code = Column(String, nullable=True)
     country = Column(String, nullable=True)
-    user = relationship("User", back_populates="address")
+    customer_id = Column(Integer, ForeignKey("customer.id"))
+    customer = relationship("Customer", back_populates="addresses")
 
     def __repr__(self) -> str:
         return f"{self.first_name} {self.last_name}"

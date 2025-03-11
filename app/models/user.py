@@ -2,6 +2,7 @@ import enum
 
 from passlib.context import CryptContext
 from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.core.db.connect import BaseModel
@@ -30,6 +31,8 @@ class User(BaseModel):
 
     last_login = Column(DateTime(timezone=True), nullable=True)
 
+    addresses = relationship("Address", back_populates="user")
+
     # # ความสัมพันธ์กับตารางอื่น
     # orders = relationship("Order", back_populates="user")  # ความสัมพันธ์กับคำสั่งซื้อ
     # cart_items = relationship("Cart", back_populates="user")  # ความสัมพันธ์กับตะกร้าสินค้า
@@ -38,7 +41,7 @@ class User(BaseModel):
         return f"<User(id={self.id}, username={self.username}, email={self.email})>"
 
     def verify_password(self, plain_password: str) -> bool:
-        return pwd_context.verify(plain_password, self.hashed_password)
+        return pwd_context.verify(plain_password, str(self.hashed_password))
 
     # Method สำหรับอัปเดต last_login
     def update_last_login(self):

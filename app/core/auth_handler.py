@@ -11,10 +11,10 @@ from app.settings.base import (
 )
 
 
-def sign_jwt(user_id: str) -> str:
+def sign_jwt(user_id: str, exp: timedelta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)) -> str:
     payload = {
         "id": user_id,
-        "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+        "exp": datetime.utcnow() + exp,
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return token
